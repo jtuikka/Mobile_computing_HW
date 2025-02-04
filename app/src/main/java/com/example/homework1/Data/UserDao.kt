@@ -10,7 +10,7 @@ import androidx.room.Query
 interface UserDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun addUser(user: User)
+    fun addUser(user: User)
 
     @Query("SELECT * FROM userTable ORDER BY userName ASC")
     fun readAllData(): LiveData<List<User>>
@@ -18,6 +18,18 @@ interface UserDao {
     @Query("SELECT * FROM userTable WHERE userName LIKE :username LIMIT 1")
     fun findByName(username: String): User
 
-    @Query("UPDATE userTable SET userName = :newUsername WHERE userName = :oldUsername")
-    fun updateName(oldUsername: String, newUsername: String): Int
+    @Query("UPDATE userTable SET userName = :newUsername WHERE uid = :uid")
+    fun updateName(newUsername: String, uid: Int): Int
+
+    @Query("SELECT * FROM userTable")
+    fun getAll(): List<User>
+
+    @Query("SELECT userName FROM userTable WHERE uid = :uid")
+    fun getUsername(uid: Int): String
+
+    @Query("SELECT profilePicture FROM userTable WHERE uid = :uid")
+    fun getProfilePicture(uid: Int): String
+
+    @Query("UPDATE userTable SET profilePicture = :newProfilePicture WHERE uid = :uid")
+    fun updateProfilePicture(newProfilePicture: String, uid: Int): Int
 }
