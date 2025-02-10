@@ -38,21 +38,54 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.material3.Icon
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import coil3.compose.AsyncImage
+import com.example.homework1.Data.UserRepository
 import com.example.homework1.ui.theme.Homework1Theme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 
 data class Message(val author: String, val body: String)
 
 @Composable
 fun MessageCard(msg: Message) {
+    val userRepository = UserRepository(LocalContext.current)
+    var profilePicture by remember { mutableStateOf("") }
+    var userName by remember { mutableStateOf("") }
+    LaunchedEffect(msg) {
+        val picture = withContext(Dispatchers.IO) {
+            userRepository.getProfilePicture(1)
+        }
+        profilePicture = picture
+        val name = withContext(Dispatchers.IO) {
+            userRepository.getUsername(1)
+        }
+        userName = name
+    }
     Row(modifier = Modifier.padding(all = 8.dp)){
-        Image(
-            painter = painterResource(R.drawable.profile_picture),
-            contentDescription = "Profile picture",
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
-        )
+        if(profilePicture.isEmpty()){
+            Image(
+                painter = painterResource(R.drawable.profile_picture),
+                contentDescription = "Profile picture",
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+            )
+        }
+        else{
+            AsyncImage(
+                model = profilePicture,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .border(1.5.dp, MaterialTheme.colorScheme.secondary, CircleShape)
+            )
+        }
+
 
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -61,8 +94,10 @@ fun MessageCard(msg: Message) {
             if (isExpanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         )
         Column(modifier = Modifier.clickable { isExpanded = !isExpanded }) {
+
+
             Text(
-                text = msg.author,
+                text = userName,
                 color = MaterialTheme.colorScheme.secondary,
                 style = MaterialTheme.typography.titleSmall
             )
