@@ -1,11 +1,10 @@
 package com.example.homework1
 
 import android.content.Context
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
@@ -26,7 +26,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.material3.Icon
@@ -45,6 +44,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 @Composable
 fun ProfileScreen(navController: NavController, context: Context) {
@@ -55,11 +55,24 @@ fun ProfileScreen(navController: NavController, context: Context) {
 fun Profile(navController: NavController, context: Context) {
     val userRepository = UserRepository(context)
     var username by remember { mutableStateOf("Default username") }
-    var profilePictureURL by remember { mutableStateOf("")}
+    var profilePictureURL by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         username = withContext(Dispatchers.IO) {
             userRepository.getUsername(1)
+        }
+        profilePictureURL = withContext(Dispatchers.IO) {
+            userRepository.getProfilePicture(1)
+        }
+    }
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val outputFile = File(context.filesDir, "profile_picture.jpg")
+            inputStream?.copyTo(outputFile.outputStream())
+
+            profilePictureURL = outputFile.absolutePath
         }
     }
 
@@ -87,24 +100,28 @@ fun Profile(navController: NavController, context: Context) {
         Spacer(modifier = Modifier.width(8.dp))
 
         Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
                 .padding(8.dp)
-                .fillMaxWidth()
+                .size(200.dp)
+                .clip(CircleShape)
+                .border(1.5.dp, MaterialTheme.colorScheme.secondary, CircleShape)
+                .clickable { launcher.launch("image/*") }
         ){
-            AsyncImage(
-                model = profilePictureURL,
-                contentDescription = "Profile picture",
-                modifier = Modifier.run {
-                    size(200.dp)
-                                .clip(CircleShape)
-                                .align(Alignment.Center)
-                                .border(
-                                    width = 1.5.dp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = CircleShape
-                                )
-                }
-            )
+            if (profilePictureURL != null) {
+                AsyncImage(
+                    model = profilePictureURL,
+                    contentDescription = null,
+                    modifier = Modifier.matchParentSize()
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add picture",
+                    modifier = Modifier.size(50.dp),
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -124,6 +141,9 @@ fun Profile(navController: NavController, context: Context) {
                 onClick = {
                     CoroutineScope(Dispatchers.IO).launch {
                         userRepository.updateUsername(username, 1)
+                        profilePictureURL?.let { nonNullURL ->
+                            userRepository.updatePicture(nonNullURL, 1)
+                        }
                     }
 
                 },

@@ -17,4 +17,12 @@ class UserRepository(context: Context) {
     fun getUsername(uid: Int): String {
         return userDao.getUsername(uid)
     }
+
+    fun getProfilePicture(uid: Int): String {
+        return userDao.getProfilePicture(uid)
+    }
+
+    fun updatePicture(newPicture: String, uid: Int): Int {
+        return userDao.updateProfilePicture(newPicture, uid)
+    }
 }
