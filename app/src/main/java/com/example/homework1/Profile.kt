@@ -1,6 +1,8 @@
 package com.example.homework1
 
 import android.content.Context
+import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
@@ -73,6 +75,14 @@ fun Profile(navController: NavController, context: Context) {
             inputStream?.copyTo(outputFile.outputStream())
 
             profilePictureURL = outputFile.absolutePath
+        }
+    }
+
+    val requestNotificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            Toast.makeText(context, "Notification permission granted", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Notification permission denied", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -155,6 +165,18 @@ fun Profile(navController: NavController, context: Context) {
                     .padding(8.dp)
             ) {
                 Text("Save")
+            }
+            Button(
+                onClick = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        requestNotificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        Toast.makeText(context, "Notification permission not needed for this version", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text("Enable notifications")
             }
         }
     }
