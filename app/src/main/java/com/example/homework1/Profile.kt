@@ -46,6 +46,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 import java.io.File
 
 @Composable
@@ -178,6 +183,30 @@ fun Profile(navController: NavController, context: Context) {
             ) {
                 Text("Enable notifications")
             }
+            val cameraPositionState = rememberCameraPositionState {
+                position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(
+                    LatLng(65.0121, 25.4651), 12f
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .padding(8.dp)
+            ) {
+                GoogleMap(
+                    modifier = Modifier.matchParentSize(),
+                    cameraPositionState = cameraPositionState
+                ){
+                    Marker(
+                        state = MarkerState(position = LatLng(65.0121, 25.4651)),
+                        title = "Location",
+                    )
+                }
+            }
+
+
         }
     }
 }
