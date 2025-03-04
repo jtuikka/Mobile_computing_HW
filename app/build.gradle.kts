@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     kotlin("plugin.serialization") version "2.0.21"
     id("com.google.devtools.ksp")
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 android {
@@ -12,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.homework1"
-        minSdk = 26
+        minSdk = 21
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -37,6 +38,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
@@ -111,4 +113,16 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.15.0")
 
+    // Maps SDK for Android
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+
+    implementation ("com.google.maps.android:maps-compose:2.14.0")
+
+    implementation ("com.google.android.gms:play-services-maps:18.2.0")
+
+}
+
+secrets {
+    propertiesFileName = "secrets.properties"
+    defaultPropertiesFileName = "local.defaults.properties"
 }
