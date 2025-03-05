@@ -1,6 +1,7 @@
 package com.example.homework1
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -51,6 +52,12 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import android.location.Location
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import android.Manifest
+import com.google.android.gms.maps.model.CameraPosition
 import java.io.File
 
 @Composable
@@ -63,6 +70,8 @@ fun Profile(navController: NavController, context: Context) {
     val userRepository = UserRepository(context)
     var username by remember { mutableStateOf("Default username") }
     var profilePictureURL by remember { mutableStateOf<String?>(null) }
+    var userLocation by remember { mutableStateOf<LatLng?>(null) }
+
 
     LaunchedEffect(Unit) {
         username = withContext(Dispatchers.IO) {
@@ -70,6 +79,19 @@ fun Profile(navController: NavController, context: Context) {
         }
         profilePictureURL = withContext(Dispatchers.IO) {
             userRepository.getProfilePicture(1)
+        }
+        val fusedLocationClient: FusedLocationProviderClient =
+            LocationServices.getFusedLocationProviderClient(context)
+
+        if (ActivityCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                location?.let {
+                    userLocation = LatLng(it.latitude, it.longitude)
+                }
+            }
         }
     }
 
@@ -90,6 +112,15 @@ fun Profile(navController: NavController, context: Context) {
             Toast.makeText(context, "Notification permission denied", Toast.LENGTH_SHORT).show()
         }
     }
+
+    val requestLocationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            Toast.makeText(context, "Location permission granted", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "Location permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -174,7 +205,7 @@ fun Profile(navController: NavController, context: Context) {
             Button(
                 onClick = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        requestNotificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                        requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                     } else {
                         Toast.makeText(context, "Notification permission not needed for this version", Toast.LENGTH_SHORT).show()
                     }
@@ -183,9 +214,21 @@ fun Profile(navController: NavController, context: Context) {
             ) {
                 Text("Enable notifications")
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Button(
+                onClick = {
+                    requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                },
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text("Enable location")
+            }
+
             val cameraPositionState = rememberCameraPositionState {
-                position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(
-                    LatLng(65.0121, 25.4651), 12f
+                position = CameraPosition.fromLatLngZoom(
+                    userLocation ?: LatLng(65.0121, 25.4651), 12f
                 )
             }
 
@@ -199,14 +242,15 @@ fun Profile(navController: NavController, context: Context) {
                     modifier = Modifier.matchParentSize(),
                     cameraPositionState = cameraPositionState
                 ){
-                    Marker(
-                        state = MarkerState(position = LatLng(65.0121, 25.4651)),
-                        title = "Location",
-                    )
+                    userLocation?.let { location ->
+                        Marker(
+                            state = MarkerState(position = LatLng(65.0121, 25.4651)),
+                            title = "My location",
+                            snippet = "You are here"
+                        )
+                    }
                 }
             }
-
-
         }
     }
 }
